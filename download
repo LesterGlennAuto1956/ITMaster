@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Schedule · IT Master Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗓️</text></svg>">
+</head>
+<body data-page="schedule">
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>IT Master Tool</h1>
+      <p>Who's working, when, and who's out. <span class="who-am-i" id="whoami"></span></p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="addEmpBtn" type="button">Add team member</button>
+    </div>
+    <div class="top-alert-wrap"><button class="btn top-alert" id="topAlert" type="button" hidden><span aria-hidden="true">🔔</span> <span id="topAlertText"></span></button></div>
+  </header>
+
+  <nav class="tabs page-tabs" aria-label="Sections">
+    <a href="/" id="navSched" class="ptab" aria-current="page">Schedule</a>
+    <a href="/timeoff/" id="navTimeoff" class="ptab">Time off</a>
+    <a href="/projects/" id="navProj" class="ptab">Projects</a>
+    <a href="/inventory/" id="navInv" class="ptab">Inventory</a>
+    <a href="/newhires/" id="navHire" class="ptab">New Hires</a>
+  </nav>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <div class="today" id="todayBand" aria-live="polite">
+    <div>
+      <div class="when" id="todayDate"></div>
+      <div class="headline" id="todayHeadline">Loading…</div>
+      <div class="grp" id="inGrp" hidden><b>On shift</b></div>
+      <div class="grp out" id="outGrp" hidden><b>Out</b></div>
+    </div>
+    <div class="ahead">
+      <strong id="aheadCount">–</strong>
+      <small>people out in the <br>next 14 days</small>
+    </div>
+  </div>
+
+  <div class="sched-top">
+    <section class="panel" id="calPanel" aria-labelledby="mcH">
+      <div class="panel-head">
+        <h2 id="mcH">Calendar</h2>
+        <div class="cal-nav">
+          <button class="btn ghost" id="mcPrev" type="button" aria-label="Previous month">‹</button>
+          <strong id="mcLabel" style="min-width:130px"></strong>
+          <button class="btn ghost" id="mcNext" type="button" aria-label="Next month">›</button>
+          <button class="btn" id="mcFull" type="button" aria-pressed="false">⤢ Full screen</button>
+        </div>
+      </div>
+      <div class="mini-cal" id="miniCal"></div>
+      <div class="mc-people-key" id="mcPeople" aria-label="Show on calendar"></div>
+      <div class="mc-legend"><span><span class="pc">AB</span> Working</span><span><span class="pc remote">AB</span> Remote</span><span><span class="pc out">AB</span> Out</span></div>
+      <div class="foot-note">Select any day to jump the schedule to that week. Each person has their own color. Select a name below to show only that person.</div>
+    </section>
+
+  </div>
+
+    <div class="mr-bar"><button class="btn mr-btn" id="mrOpen" type="button"><span id="mrLabel">📅 New Month Schedule</span><span class="tab-badge" id="mrBadge"></span></button></div>
+    <section class="panel" aria-labelledby="dayTitle">
+      <div class="panel-head">
+        <h2 id="dayTitle">Who's in</h2>
+      </div>
+      <div class="scroll"><div class="tl" id="timeline"></div></div>
+    </section>
+
+  <section class="panel" aria-labelledby="wkH">
+      <div class="panel-head">
+        <h2 id="wkH">Weekly schedule</h2>
+        <div class="cal-nav">
+          <button class="btn ghost" id="prevW" type="button" aria-label="Previous week">‹</button>
+          <strong id="weekLabel"></strong>
+          <button class="btn ghost" id="nextW" type="button" aria-label="Next week">›</button>
+          <button class="btn" id="thisW" type="button">This week</button>
+        </div>
+      </div>
+      <div class="scroll" id="schedGrid"></div>
+      <div class="foot-note">Select any day to change hours or mark someone off, for just that date or every week. Use Edit weekly hours to change someone's hours and days all at once, and the Starting location menu under each name to set where they usually start. Select a day to change the location for just that date (marked *). A dashed edge means that day differs from their regular hours.</div>
+    </section>
+
+  
+
+
+  <section class="panel" aria-labelledby="rmH">
+      <div class="panel-head">
+        <h2 id="rmH">Working remote</h2>
+        <div class="filters">
+          <select id="rfEmp" aria-label="Filter remote days by team member"><option value="">Everyone</option></select>
+          <button class="btn primary" id="rBtn" type="button">Log remote day</button>
+        </div>
+      </div>
+      <div class="scroll" id="remoteLog"></div>
+      <div class="foot-note">Remote days don't use PTO. They show on the weekly schedule and the Who's in timeline in teal.</div>
+    </section>
+</div>
+
+<dialog id="empDlg">
+  <form method="dialog" id="empForm">
+    <h3 id="empTitle">Add team member</h3>
+    <div class="field"><label for="eName">Name</label><input id="eName" required maxlength="80" autocomplete="off"></div>
+    <div class="field"><label for="eRole">Role</label><input id="eRole" maxlength="80" placeholder="e.g. Help desk, Network admin" autocomplete="off"></div>
+    <div class="field"><label for="eLoc">Starting location</label><select id="eLoc"><option value="">Not set</option><option>Lester Glenn Mazda of Toms River</option><option>Lester Glenn Hyundai of Toms River</option><option>Lester Glenn Chevy of Toms River</option><option>Lester Glenn GMC of Toms River</option><option>Lester Glenn Subaru of Toms River</option><option>Lester Glenn Collision of Toms River</option><option>Lester Glenn Chrysler of Toms River</option><option>Lester Glenn Honda of Sea Girt</option><option>Lester Glenn Ford of Ocean</option><option>Lester Glenn Chevy of Freehold</option><option>Lester Glenn Chevy of Old Bridge</option><option>Lester Glenn Corporate of Toms River</option><option>Lester Glenn Warranty of Toms River</option><option>Lester Glenn Service BDC of Toms River</option><option>Lester Glenn Marketing</option><option>Lester Glenn Used Car Dept</option><option>Remote</option></select>
+      <small>Where they usually start their day. You can change it for a single day from the weekly schedule.</small></div>
+    <div class="field" id="ePinField" hidden><label for="ePin">4-digit PIN for inventory</label><input id="ePin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="new-password" placeholder="••••"><small id="ePinNote"></small></div>
+    <div class="field" id="allowField"><label for="eAllow">Annual PTO allowance (days)</label><input id="eAllow" type="number" min="0" max="365" step="0.5" value="15" required></div>
+    <fieldset>
+      <legend>Regular hours</legend>
+      <div id="eHours"></div>
+      <button class="btn small" id="copyMon" type="button">Copy Monday's hours to Tue–Fri</button>
+    </fieldset>
+    <div class="err" id="empErr"></div>
+    <div class="dlg-actions">
+      <button class="btn danger" id="empDel" type="button" hidden>Remove</button>
+      <div class="right">
+        <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+        <button class="btn primary" id="empSave" value="save">Save team member</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="shiftDlg">
+  <form method="dialog" id="shiftForm">
+    <h3 id="shiftTitle">Change hours</h3>
+    <p class="emp-role" id="shiftRegular" style="margin:-8px 0 12px"></p>
+    <div class="warn" id="shiftPto" hidden></div>
+    <fieldset class="choice">
+      <legend>Apply change to</legend>
+      <label><input type="radio" name="sscope" value="day" checked> <span id="scopeDay">Just this day</span></label>
+      <label><input type="radio" name="sscope" value="every"> <span id="scopeEvery">Every week</span></label>
+    </fieldset>
+    <fieldset class="choice">
+      <legend>Hours</legend>
+      <label id="regLabel"><input type="radio" name="smode" value="regular" checked> Regular hours</label>
+      <label><input type="radio" name="smode" value="custom"> <span id="customLbl">Different hours</span></label>
+      <label><input type="radio" name="smode" value="off"> Not working</label>
+    </fieldset>
+    <div class="row2" id="shiftTimes">
+      <div class="field"><label for="sStart">Start</label><input id="sStart" type="time"></div>
+      <div class="field"><label for="sEnd">End</label><input id="sEnd" type="time"></div>
+    </div>
+    <div class="field" id="sLocField"><label for="sLoc">Starting location this day</label><select id="sLoc"></select></div>
+    <div class="field"><label for="sNote">Note (optional)</label><input id="sNote" maxlength="120" placeholder="e.g. On-call, covering for Sam, server migration" autocomplete="off"></div>
+    <div class="err" id="shiftErr"></div>
+    <div class="dlg-actions">
+      <div class="right">
+        <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+        <button class="btn primary" value="save">Save hours</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="rmDlg">
+  <form method="dialog" id="rmForm">
+    <h3 id="rmTitle">Log remote day</h3>
+    <div class="field"><label for="rEmp">Team member</label><select id="rEmp" required></select></div>
+    <div class="row2">
+      <div class="field"><label for="rStart">First day</label><input id="rStart" type="date" required></div>
+      <div class="field"><label for="rEnd">Last day</label><input id="rEnd" type="date" required></div>
+    </div>
+    <label class="check"><input type="checkbox" id="rCalled"> Called out, working remote (unplanned)</label>
+    <div class="field"><label for="rNote">Note (optional)</label><input id="rNote" maxlength="200" placeholder="e.g. Car trouble, available on Teams" autocomplete="off"></div>
+    <small class="emp-role" style="display:block;margin-bottom:8px">Uses their scheduled hours for those days. Doesn't count against PTO.</small>
+    <div class="err" id="rmErr"></div>
+    <div class="dlg-actions">
+      <div class="right">
+        <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
+        <button class="btn" value="again">Save and add another</button>
+        <button class="btn primary" value="save">Log remote day</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+
+<dialog id="mrSatDlg" class="mr-sat">
+  <form method="dialog">
+    <h3 id="mrSatQ">Are you covering Saturday that week?</h3>
+    <p class="emp-role" id="mrSatInfo" style="margin:0 0 14px"></p>
+    <div class="dlg-actions"><div class="right">
+      <button class="btn ghost" value="cancel" type="button">Cancel</button>
+      <button class="btn" value="no">No, I’m not</button>
+      <button class="btn primary" value="yes">Yes, I’m covering it</button>
+    </div></div>
+  </form>
+</dialog>
+
+<dialog id="mrDlg" class="mr-dlg">
+  <form method="dialog" id="mrForm">
+    <div class="mr-top">
+      <h3 id="mrTitle">New Month Schedule</h3>
+      <button class="btn ghost" value="cancel" type="button" aria-label="Close">✕ Close</button>
+    </div>
+    <p class="emp-role" style="margin:0 0 10px">Choose your name, then select a <b>Saturday or Sunday</b> to request that weekend off, or a <b>weekday</b> to request that day off. One weekday per week. Select your request again to take it back.</p>
+    <div class="mr-who"><label>Your name<select id="mrWho"></select></label>
+      <span class="mr-key"><i class="k-we"></i>Weekend off <i class="k-day"></i>Day off <i class="k-cov"></i>Covering Saturday <i class="k-ok"></i>Approved <i class="k-no"></i>Denied</span></div>
+    <div class="scroll"><div class="mr-cal" id="mrCal"></div></div>
+    <div class="err" id="mrErr" role="alert"></div>
+    <div class="mr-review">
+      <div class="mr-review-head"><h4 style="margin:0">Requests</h4>
+        <div id="mrMgrLock" class="mr-mgr-lock"><select id="mrMgrWho" aria-label="Manager"></select><input id="mrMgrPin" type="password" inputmode="numeric" maxlength="4" placeholder="PIN" aria-label="Manager PIN"><button class="btn small" id="mrMgrBtn" type="button">Manager review</button></div>
+        <div id="mrMgrOn" class="mr-mgr-lock" hidden><span id="mrMgrText"></span><button class="btn small" id="mrAllSeen" type="button">✓ Mark all reviewed</button><button class="btn small ghost" id="mrMgrOff" type="button">Lock</button></div>
+      </div>
+      <div class="scroll" id="mrList"></div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="/app.js"></script>
+</body>
+</html>
